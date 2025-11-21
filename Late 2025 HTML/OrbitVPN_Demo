@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrbitVPN | Premium</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Custom Styles, Font, and Animations -->
+    <style>
+        /* Import the Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            /* A deeper, more "tech" background */
+            background-color: #10121a;
+        }
+
+        /* Glassmorphism base style */
+        .glass-panel {
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom scrollbar for server list */
+        .server-list-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .server-list-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 3px;
+        }
+        .server-list-scroll::-webkit-scrollbar-thumb {
+            background: #05f283; /* Use accent color */
+            border-radius: 3px;
+        }
+        .server-list-scroll::-webkit-scrollbar-thumb:hover {
+            background: #04d976;
+        }
+
+        /* Connection Button Animations */
+        @keyframes pulse-shadow-disconnected {
+            0%, 100% { box-shadow: 0 0 20px rgba(74, 85, 104, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(74, 85, 104, 0.5); }
+        }
+        @keyframes pulse-shadow-connected {
+            0%, 100% { box-shadow: 0 0 25px rgba(5, 242, 131, 0.4); }
+            50% { box-shadow: 0 0 45px rgba(5, 242, 131, 0.7); }
+        }
+        
+        #connect-button-icon.connecting {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Faintly animated background map */
+        @keyframes subtle-pan {
+            0% { transform: translate(0, 0) scale(1.5); }
+            50% { transform: translate(-10px, 5px) scale(1.55); }
+            100% { transform: translate(0, 0) scale(1.5); }
+        }
+        .animated-map-bg {
+            animation: subtle-pan 60s ease-in-out infinite;
+        }
+
+        /* SVG chart styling */
+        #traffic-chart-path {
+            stroke: #05f283;
+            stroke-width: 2;
+            fill: url(#chart-gradient);
+            transition: d 0.1s linear; /* Smooth chart updates */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 text-neutral-200 antialiased">
+
+    <!-- 
+      Main App Container 
+      A wider, 3-column desktop-style layout.
+    -->
+    <div class="w-full max-w-6xl h-[700px] grid grid-cols-1 md:grid-cols-3 gap-4 glass-panel rounded-2xl shadow-2xl overflow-hidden">
+        
+        <!-- === COLUMN 1: Server List === -->
+        <div class="col-span-1 flex flex-col h-full border-r border-white/5">
+            <!-- Header -->
+            <header class="p-4 flex-shrink-0 border-b border-white/5">
+                <h1 class="text-xl font-bold text-white">Locations</h1>
+            </header>
+
+            <!-- Search -->
+            <div class="p-4 flex-shrink-0 relative">
+                <input type="text" placeholder="Search location..." class="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent">
+                <!-- Search Icon -->
+                <svg class="w-5 h-5 text-neutral-400 absolute left-7 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+            </div>
+
+            <!-- Server List -->
+            <div class="flex-grow overflow-y-auto server-list-scroll p-4 space-y-2">
+                
+                <!-- Server Item (Selected) -->
+                <div class="server-item server-selected flex items-center justify-between p-3 rounded-lg cursor-pointer bg-green-500/20 ring-2 ring-green-400" data-country="United States" data-city="New York" data-ping="28">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🇺🇸</span>
+                        <div>
+                            <span class="font-semibold text-white">United States</span>
+                            <span class="block text-xs text-neutral-300">New York</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-medium text-green-300">28 ms</span>
+                        <!-- Load bar -->
+                        <div class="w-10 h-1.5 bg-green-900 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-green-400" style="width: 30%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Item -->
+                <div class="server-item flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors" data-country="Japan" data-city="Tokyo" data-ping="142">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🇯🇵</span>
+                        <div>
+                            <span class="font-semibold text-white">Japan</span>
+                            <span class="block text-xs text-neutral-300">Tokyo</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-medium text-yellow-300">142 ms</span>
+                        <div class="w-10 h-1.5 bg-yellow-900 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-yellow-400" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Item -->
+                <div class="server-item flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors" data-country="Germany" data-city="Berlin" data-ping="88">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🇩🇪</span>
+                        <div>
+                            <span class="font-semibold text-white">Germany</span>
+                            <span class="block text-xs text-neutral-300">Berlin</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-medium text-yellow-300">88 ms</span>
+                        <div class="w-10 h-1.5 bg-yellow-900 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-yellow-400" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Item -->
+                <div class="server-item flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors" data-country="Australia" data-city="Sydney" data-ping="210">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🇦🇺</span>
+                        <div>
+                            <span class="font-semibold text-white">Australia</span>
+                            <span class="block text-xs text-neutral-300">Sydney</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-medium text-red-400">210 ms</span>
+                        <div class="w-10 h-1.5 bg-red-900 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-red-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More servers... -->
+                <div class="server-item flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors" data-country="Canada" data-city="Toronto" data-ping="45">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🇨🇦</span>
+                        <div>
+                            <span class="font-semibold text-white">Canada</span>
+                            <span class="block text-xs text-neutral-300">Toronto</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-medium text-green-300">45 ms</span>
+                        <div class="w-10 h-1.5 bg-green-900 rounded-full overflow-hidden mt-1">
+                            <div class="h-full bg-green-400" style="width: 40%"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- === COLUMN 2 & 3: Main Panel === -->
+        <div class="md:col-span-2 h-full flex flex-col relative overflow-hidden">
+            
+            <!-- Animated SVG Map Background -->
+            <div class="absolute inset-0 z-0 opacity-10 overflow-hidden">
+                <svg class="animated-map-bg text-neutral-600" width="100%" height="100%" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                    <!-- This is a simplified, stylized world map SVG -->
+                    <path fill="currentColor" d="M1000 250l-30-20-10 40 30-10 10-10zM950 150l-50 10-10 30 40 10 20-50zM850 50l-100 10-30 40 50 20 80-70zM500 0l-100 50-50 100 150 50 50-200zM300 50l-100 50-50 100 100 50 50-200zM100 150l-100 50 50 100 100-50-50-100zM50 400l50 50 100-50-50-50-100 50zM200 450l100-50 50 50-100 50-50-50zM400 400l100 50 50-50-100-50-50 50zM600 450l100-50 50 50-100 50-50-50zM800 400l100 50 50-50-100-50-50 50zM350 250l50 50 100-50-50-50-100 50zM500 250l100-50 50 50-100 50-50-50zM700 250l100 50 50-50-100-50-50 50zM250 150l100 50 50-50-100-50-50 50zM600 150l100 50 50-50-100-50-50 50zM500 350l50 50 100-50-50-50-100 50zM300 350l100 50 50-50-100-50-50 50z"/>
+                </svg>
+            </div>
+            
+            <!-- Header -->
+            <header class="p-4 flex-shrink-0 flex justify-between items-center z-10">
+                <h1 class="text-xl font-bold text-white">Orbit<span class="text-green-400">VPN</span></h1>
+                <div class="flex items-center space-x-2">
+                    <div id="status-dot" class="w-3 h-3 bg-red-500 rounded-full transition-colors duration-300"></div>
+                    <span id="status-text" class="text-lg font-semibold text-neutral-300">Not Connected</span>
+                </div>
+            </header>
+            
+            <!-- Connection Hub -->
+            <div class="flex-grow flex flex-col items-center justify-center p-8 z-10">
+                <span id="selected-server-text" class="text-xl font-medium text-neutral-300 mb-6">Connect to <span class="text-white font-semibold">New York, USA</span></span>
+                
+                <!-- Main Connect Button -->
+                <button id="connect-button" class="w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out" style="animation: pulse-shadow-disconnected 3s infinite;">
+                    <!-- Power Icon SVG -->
+                    <svg id="connect-button-icon" class="w-24 h-24 text-neutral-500 transition-colors duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
+                    </svg>
+                </button>
+                <span id="connect-button-text" class="mt-6 text-2xl font-bold text-neutral-400 transition-colors duration-300">Tap to Connect</span>
+            </div>
+
+            <!-- Stats Footer -->
+            <footer class="flex-shrink-0 p-6 z-10 glass-panel border-t border-white/5 rounded-t-xl">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Live Traffic -->
+                    <div class="md:col-span-2">
+                        <span class="text-xs font-semibold text-neutral-400 uppercase">Live Traffic</span>
+                        <div class="h-24 w-full mt-2 relative">
+                            <!-- SVG Chart -->
+                            <svg id="traffic-chart" class="w-full h-full" preserveAspectRatio="none">
+                                <!-- Gradient Definition -->
+                                <defs>
+                                    <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#05f283" stop-opacity="0.4"/>
+                                        <stop offset="100%" stop-color="#05f283" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path id="traffic-chart-path" d="M0,96 L30,96 L60,96 L90,96 L120,96 L150,96 L180,96 L210,96 L240,96 L270,96 L300,96 L330,96 L360,96 L390,96 L420,96 L450,96 L480,96 L510,96 L540,96 L570,96" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Data & Info -->
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <!-- Download -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                                <div>
+                                    <span class="text-xs font-semibold text-neutral-400 uppercase">Down</span>
+                                    <span id="mock-down" class="block text-lg font-semibold text-white">0.0 MB</span>
+                                </div>
+                            </div>
+                            <!-- Upload -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v17" />
+                                </svg>
+                                <div>
+                                    <span class="text-xs font-semibold text-neutral-400 uppercase">Up</span>
+                                    <span id="mock-up" class="block text-lg font-semibold text-white">0.0 MB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <span class="text-xs font-semibold text-neutral-400 uppercase">IP Address</span>
+                            <span id="mock-ip" class="block text-lg font-medium text-white">---.---.---.---</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+    </div>
+
+    <!-- 3. JavaScript for Mock Interactions -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State ---
+            let isConnected = false;
+            let isConnecting = false;
+            let timerInterval = null;
+            let seconds = 0;
+            let dataUp = 0;
+            let dataDown = 0;
+            let selectedServer = {
+                country: 'United States',
+                city: 'New York'
+            };
+            
+            // --- Chart State ---
+            const chartPoints = 20; // Number of points on the chart
+            let chartData = new Array(chartPoints).fill(0);
+            const chartSvg = document.getElementById('traffic-chart');
+            const chartPath = document.getElementById('traffic-chart-path');
+
+            // --- Elements ---
+            const connectButton = document.getElementById('connect-button');
+            const connectButtonIcon = document.getElementById('connect-button-icon');
+            const connectButtonText = document.getElementById('connect-button-text');
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
+            const mockIp = document.getElementById('mock-ip');
+            const mockDown = document.getElementById('mock-down');
+            const mockUp = document.getElementById('mock-up');
+            const selectedServerText = document.getElementById('selected-server-text');
+            const serverItems = document.querySelectorAll('.server-item');
+
+            // --- Utility Functions ---
+            function formatData(bytes) {
+                if (bytes < 1024) return bytes.toFixed(0) + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+            }
+
+            // --- NEW: Random IP Generator ---
+            function generateRandomIp() {
+                const octet1 = Math.floor(Math.random() * 256);
+                const octet2 = Math.floor(Math.random() * 256);
+                const octet3 = Math.floor(Math.random() * 256);
+                const octet4 = Math.floor(Math.random() * 256);
+                return `${octet1}.${octet2}.${octet3}.${octet4}`;
+            }
+            
+            // --- Charting Function ---
+            function updateChart() {
+                // Simulate new data
+                const newDataPoint = (isConnected ? Math.random() * 50 + 10 : 0) + (Math.random() * 10 - 5);
+                chartData.push(Math.max(0, newDataPoint));
+                if (chartData.length > chartPoints) {
+                    chartData.shift();
+                }
+
+                // Get SVG dimensions
+                const svgHeight = chartSvg.clientHeight;
+                const svgWidth = chartSvg.clientWidth;
+                const maxVal = 100; // Mock max value (100 kb/s or similar)
+                
+                // Create the 'd' attribute string for the SVG path
+                let pathD = `M 0,${svgHeight - (chartData[0] / maxVal) * svgHeight}`;
+                for (let i = 1; i < chartData.length; i++) {
+                    const x = (i / (chartPoints - 1)) * svgWidth;
+                    const y = svgHeight - (chartData[i] / maxVal) * svgHeight;
+                    pathD += ` L ${x},${y}`;
+                }
+                
+                // Create a baseline for the fill
+                pathD += ` L ${svgWidth},${svgHeight} L 0,${svgHeight} Z`;
+                
+                chartPath.setAttribute('d', pathD);
+            }
+
+            // --- Timer & Data Functions ---
+            function startTimer() {
+                clearInterval(timerInterval);
+                seconds = 0;
+                dataUp = 0;
+                dataDown = 0;
+                chartData = new Array(chartPoints).fill(0); // Clear chart
+
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    
+                    // Simulate data transfer
+                    dataDown += Math.random() * 500000; // More data
+                    dataUp += Math.random() * 100000;
+                    mockDown.textContent = formatData(dataDown);
+                    mockUp.textContent = formatData(dataUp);
+                    
+                    // Update the live chart
+                    updateChart();
+                }, 100); // Update chart 10x per second
+            }
+
+            function stopTimer() {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                
+                // Decay chart to zero
+                let decayInterval = setInterval(() => {
+                    updateChart(); // Will add 0
+                    if(chartData.every(p => p === 0)) {
+                        clearInterval(decayInterval);
+                    }
+                }, 100);
+            }
+
+            // --- Connection Logic ---
+            function connect() {
+                if (isConnecting) return;
+                isConnecting = true;
+
+                // 1. Update UI to "Connecting"
+                statusText.textContent = 'Connecting...';
+                connectButtonText.textContent = 'Connecting...';
+                connectButtonIcon.classList.add('connecting');
+                connectButtonIcon.classList.remove('text-neutral-500');
+                connectButtonIcon.classList.add('text-yellow-400');
+                connectButton.style.animation = ''; // Stop pulse
+
+                // 2. Simulate connection time (2 seconds)
+                setTimeout(() => {
+                    isConnecting = false;
+                    isConnected = true;
+
+                    // 3. Update UI to "Connected"
+                    statusText.textContent = 'Connected';
+                    statusDot.classList.replace('bg-red-500', 'bg-green-500');
+                    
+                    connectButtonText.textContent = 'Tap to Disconnect';
+                    connectButtonIcon.classList.remove('connecting');
+                    connectButtonIcon.classList.remove('text-yellow-400');
+                    connectButtonIcon.classList.add('text-green-400');
+                    connectButton.style.animation = 'pulse-shadow-connected 2s infinite';
+                    
+                    // --- MODIFIED: Use random IP ---
+                    mockIp.textContent = generateRandomIp(); 
+                    startTimer();
+
+                }, 2000);
+            }
+
+            function disconnect() {
+                if (isConnecting) return;
+                isConnected = false;
+                
+                // Update UI to "Disconnected"
+                statusText.textContent = 'Not Connected';
+                statusDot.classList.replace('bg-green-500', 'bg-red-500');
+
+                connectButtonText.textContent = 'Tap to Connect';
+                connectButtonIcon.classList.remove('text-green-400');
+                connectButtonIcon.classList.add('text-neutral-500');
+                connectButton.style.animation = 'pulse-shadow-disconnected 3s infinite';
+                
+                mockIp.textContent = '---.---.---.---';
+                mockDown.textContent = '0.0 MB';
+                mockUp.textContent = '0.0 MB';
+                stopTimer();
+            }
+
+            // --- Event Listeners ---
+            connectButton.addEventListener('click', () => {
+                if (isConnected) {
+                    disconnect();
+                } else {
+                    connect();
+                }
+            });
+            
+            // Server selection
+            serverItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Remove selected state from all
+                    serverItems.forEach(i => i.classList.remove('bg-green-500/20', 'ring-2', 'ring-green-400'));
+                    
+                    // Add selected state to clicked item
+                    item.classList.add('bg-green-500/20', 'ring-2', 'ring-green-400');
+                    
+                    // Update state
+                    selectedServer.country = item.dataset.country;
+                    selectedServer.city = item.dataset.city;
+
+                    // Update main panel text
+                    selectedServerText.innerHTML = `Connect to <span class="text-white font-semibold">${selectedServer.city}, ${selectedServer.country}</span>`;
+                    
+                    // If already connected, simulate a reconnect
+                    if (isConnected) {
+                        disconnect();
+                        setTimeout(connect, 500); // Reconnect to new server
+                    }
+                });
+            });
+
+            // Initial chart render
+            updateChart();
+            window.addEventListener('resize', updateChart); // Redraw on resize
+        });
+    </script>
+</body>
+</html>
